@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#080b13">
+  <title>Atomik — Laboratorium Kimia 3D</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #080b13;
+      --panel: rgba(17, 22, 33, .84);
+      --panel-strong: #111722;
+      --line: rgba(181, 198, 218, .12);
+      --text: #edf3fa;
+      --muted: #8d99a9;
+      --mint: #73f5c5;
+      --blue: #70c9ff;
+      --violet: #c3a2ff;
+      --amber: #ffca7a;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      min-width: 340px;
+      min-height: 100vh;
+      margin: 0;
+      overflow-x: hidden;
+      color: var(--text);
+      background:
+        radial-gradient(ellipse at 50% 20%, rgba(39, 72, 81, .2), transparent 48%),
+        radial-gradient(ellipse at 95% 70%, rgba(78, 57, 118, .12), transparent 42%),
+        var(--bg);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    .page { width: min(1540px, 100%); margin: 0 auto; padding: 24px clamp(16px, 4vw, 58px) 28px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .brand { display: flex; align-items: center; gap: 11px; }
+    .brand-mark {
+      width: 39px; height: 39px; display: grid; place-items: center;
+      border: 1px solid rgba(115, 245, 197, .32); border-radius: 12px;
+      background: linear-gradient(145deg, rgba(115, 245, 197, .18), rgba(61, 110, 125, .08));
+      color: var(--mint); font-size: 19px; box-shadow: 0 0 24px rgba(115, 245, 197, .1);
+    }
+    .brand-name { font-size: 14px; font-weight: 760; letter-spacing: .13em; }
+    .brand-caption { margin-top: 3px; color: var(--muted); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; }
+    .top-right { display: flex; align-items: center; gap: 9px; }
+    .badge { display: inline-flex; align-items: center; gap: 8px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line); border-radius: 99px; color: #b7c3d0; background: rgba(18, 24, 35, .76); font-size: 10px; }
+    .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 9px var(--mint); }
+    .hero { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin: 40px 0 22px; }
+    .eyebrow { color: var(--mint); font-size: 9px; font-weight: 750; letter-spacing: .2em; text-transform: uppercase; }
+    h1 { margin: 9px 0 8px; font-size: clamp(29px, 4.4vw, 48px); font-weight: 570; letter-spacing: -.055em; line-height: 1.05; }
+    h1 span { color: var(--mint); }
+    .hero p { max-width: 620px; margin: 0; color: #909dae; font-size: 12px; line-height: 1.7; }
+    .credit-chip { flex: 0 0 auto; padding: 10px 13px; border: 1px solid rgba(115, 245, 197, .22); border-radius: 10px; color: #bfeede; background: rgba(70, 177, 139, .07); font-size: 10px; letter-spacing: .02em; }
+    .credit-chip span { color: var(--mint); font-weight: 720; }
+    .explorer { display: grid; grid-template-columns: minmax(0, 1fr) 285px; gap: 13px; }
+    .scene-card, .info-card, .periodic-card { border: 1px solid var(--line); border-radius: 15px; background: linear-gradient(145deg, rgba(20, 27, 39, .87), rgba(12, 17, 26, .9)); box-shadow: 0 18px 60px rgba(0, 0, 0, .13); }
+    .scene-card { min-width: 0; overflow: hidden; }
+    .scene-toolbar { min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 15px; border-bottom: 1px solid var(--line); }
+    .mode-switch { display: inline-flex; padding: 3px; border: 1px solid rgba(180, 193, 212, .1); border-radius: 9px; background: rgba(7, 11, 18, .62); }
+    .mode-button, .toolbar-button, .molecule-button {
+      min-height: 31px; border: 0; border-radius: 7px; background: transparent; color: #93a0b0; cursor: pointer; transition: .18s ease;
+    }
+    .mode-button { padding: 0 13px; font-size: 10px; }
+    .mode-button.active { color: var(--mint); background: rgba(115, 245, 197, .11); box-shadow: inset 0 0 0 1px rgba(115, 245, 197, .13); }
+    .toolbar-actions { display: flex; align-items: center; gap: 7px; }
+    .toolbar-button { padding: 0 10px; border: 1px solid var(--line); font-size: 10px; }
+    .toolbar-button:hover, .toolbar-button:focus-visible, .mode-button:hover { color: var(--text); outline: none; }
+    .scene-status { display: flex; align-items: center; gap: 7px; color: #8794a4; font-size: 9px; }
+    .scene-status::before { width: 6px; height: 6px; content: ""; border-radius: 50%; background: var(--mint); box-shadow: 0 0 8px var(--mint); }
+    .viewport { height: clamp(330px, 42vw, 480px); min-height: 330px; position: relative; overflow: hidden; background: radial-gradient(ellipse at 50% 51%, rgba(34, 57, 72, .24), transparent 55%); }
+    #scene { display: block; width: 100%; height: 100%; touch-action: none; }
+    .scene-label { position: absolute; bottom: 14px; left: 16px; color: rgba(192, 206, 220, .55); font-size: 9px; letter-spacing: .1em; pointer-events: none; }
+    .scene-help { position: absolute; right: 15px; bottom: 14px; display: flex; gap: 12px; color: rgba(176, 190, 204, .55); font-size: 9px; pointer-events: none; }
+    .molecule-picker { display: none; align-items: center; gap: 7px; padding: 10px 14px 12px; border-top: 1px solid var(--line); }
+    .molecule-picker.visible { display: flex; }
+    .picker-label { margin-right: 4px; color: var(--muted); font-size: 9px; }
+    .molecule-button { min-width: 55px; padding: 0 11px; border: 1px solid var(--line); font-size: 10px; }
+    .molecule-button.active { border-color: rgba(112, 201, 255, .34); color: var(--blue); background: rgba(112, 201, 255, .09); }
+    .info-card { min-width: 0; padding: 17px 17px 15px; }
+    .info-head { display: flex; align-items: center; justify-content: space-between; color: #a4afbd; font-size: 9px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+    .info-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 9px currentColor; }
+    .element-heading { display: flex; align-items: center; gap: 13px; margin: 23px 0 18px; }
+    .element-symbol { width: 66px; height: 66px; display: grid; place-items: center; border: 1px solid rgba(115, 245, 197, .32); border-radius: 15px; color: var(--mint); background: rgba(115, 245, 197, .08); font-size: 31px; font-weight: 550; box-shadow: inset 0 0 25px rgba(115, 245, 197, .04), 0 0 25px rgba(115, 245, 197, .06); }
+    .element-name { font-size: 20px; font-weight: 620; letter-spacing: -.035em; }
+    .element-latin { margin-top: 4px; color: var(--muted); font-size: 10px; }
+    .atomic-number { color: var(--mint); font-size: 9px; letter-spacing: .11em; text-transform: uppercase; }
+    .property-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .property { min-height: 61px; padding: 10px; border: 1px solid rgba(181, 198, 218, .08); border-radius: 9px; background: rgba(6, 10, 17, .32); }
+    .property-label { color: #7f8b9b; font-size: 8px; letter-spacing: .09em; text-transform: uppercase; }
+    .property-value { margin-top: 7px; color: #e3eaf1; font-size: 12px; font-weight: 580; }
+    .use-block { margin-top: 15px; padding-top: 13px; border-top: 1px solid var(--line); }
+    .use-title { color: #8995a5; font-size: 8px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+    .use-text { min-height: 53px; margin: 8px 0 0; color: #bdc8d3; font-size: 10px; line-height: 1.65; }
+    .atom-facts { display: flex; gap: 8px; margin-top: 13px; }
+    .fact { flex: 1; padding: 9px; border-radius: 8px; background: rgba(112, 201, 255, .055); color: #9aa8b8; font-size: 8px; }
+    .fact strong { display: block; margin-top: 5px; color: #dce8f1; font-size: 11px; font-weight: 600; }
+    .periodic-card { margin-top: 14px; padding: 17px 17px 15px; overflow: hidden; }
+    .periodic-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 15px; }
+    .periodic-title { margin: 0; font-size: 14px; font-weight: 620; letter-spacing: -.015em; }
+    .periodic-subtitle { margin-top: 4px; color: var(--muted); font-size: 9px; }
+    .periodic-tools { display: flex; align-items: center; gap: 12px; }
+    .search-wrap { position: relative; }
+    .search-wrap::before { position: absolute; top: 8px; left: 10px; content: "⌕"; color: #8290a0; font-size: 15px; }
+    .search { width: 190px; height: 31px; padding: 0 10px 0 29px; border: 1px solid var(--line); border-radius: 8px; outline: none; color: var(--text); background: rgba(6, 10, 17, .4); font-size: 10px; }
+    .search:focus { border-color: rgba(115, 245, 197, .48); }
+    .legend { display: flex; flex-wrap: wrap; gap: 8px 11px; color: #8995a5; font-size: 8px; }
+    .legend span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+    .legend i { width: 6px; height: 6px; border-radius: 2px; background: var(--legend-color); }
+    .table-scroll { overflow-x: auto; padding: 1px 0 5px; scrollbar-color: #354052 transparent; scrollbar-width: thin; }
+    .periodic-grid { display: grid; grid-template-columns: repeat(18, minmax(43px, 1fr)); grid-template-rows: repeat(7, 58px) 10px repeat(2, 58px); gap: 4px; min-width: 875px; }
+    .element-tile {
+      min-width: 0; position: relative; display: flex; flex-direction: column; justify-content: space-between; padding: 5px 5px 4px;
+      border: 1px solid color-mix(in srgb, var(--tile-color) 25%, transparent); border-radius: 6px;
+      background: color-mix(in srgb, var(--tile-color) 7%, rgba(10, 15, 23, .86)); color: #e7edf3;
+      text-align: left; cursor: pointer; transition: transform .16s ease, border-color .16s ease, background .16s ease, opacity .16s ease;
+    }
+    .element-tile:hover, .element-tile:focus-visible { z-index: 1; transform: translateY(-2px); border-color: var(--tile-color); background: color-mix(in srgb, var(--tile-color) 17%, rgba(10, 15, 23, .9)); outline: none; }
+    .element-tile.selected { border-color: var(--tile-color); background: color-mix(in srgb, var(--tile-color) 18%, rgba(10, 15, 23, .92)); box-shadow: 0 0 14px color-mix(in srgb, var(--tile-color) 13%, transparent); }
+    .element-tile.filtered { opacity: .14; }
+    .tile-number { color: #8c98a7; font-size: 7px; line-height: 1; }
+    .tile-symbol { color: var(--tile-color); font-size: 16px; font-weight: 670; line-height: 1; }
+    .tile-name { overflow: hidden; color: #aab5c1; font-size: 6px; line-height: 1; text-overflow: ellipsis; white-space: nowrap; }
+    .series-label { grid-column: 1 / 3; align-self: center; color: #748193; font-size: 8px; white-space: nowrap; }
+    .table-note { margin: 12px 0 0; color: #758192; font-size: 8px; }
+    footer { display: flex; justify-content: space-between; gap: 15px; margin-top: 17px; color: #687485; font-size: 8px; }
+    footer strong { color: #a5b2bf; font-weight: 580; }
+    .watermark { color: rgba(168, 188, 195, .7); letter-spacing: .08em; }
+
+    @media (max-width: 900px) {
+      .explorer { grid-template-columns: minmax(0, 1fr) 255px; }
+      .info-card { padding: 14px; }
+      .element-heading { gap: 10px; }
+      .element-symbol { width: 58px; height: 58px; }
+      .periodic-header { align-items: flex-start; }
+      .periodic-tools { align-items: flex-end; flex-direction: column-reverse; gap: 8px; }
+      .legend { justify-content: flex-end; }
+    }
+    @media (max-width: 680px) {
+      .page { padding-top: 17px; }
+      .hero { align-items: flex-start; flex-direction: column; margin-top: 30px; gap: 13px; }
+      .explorer { grid-template-columns: 1fr; }
+      .viewport { height: 370px; }
+      .info-card { display: grid; grid-template-columns: 1fr 1fr; column-gap: 13px; }
+      .info-head { grid-column: 1 / -1; }
+      .element-heading { grid-column: 1 / -1; margin: 16px 0 13px; }
+      .property-grid { grid-column: 1 / -1; }
+      .use-block { grid-column: 1 / -1; }
+      .atom-facts { grid-column: 1 / -1; }
+      .periodic-card { padding: 14px 12px; }
+      .periodic-header { flex-direction: column; gap: 12px; }
+      .periodic-tools { align-items: flex-start; flex-direction: column; width: 100%; }
+      .search-wrap, .search { width: 100%; }
+      .legend { justify-content: flex-start; }
+      footer { flex-direction: column; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Atomik beranda" style="color:inherit;text-decoration:none">
+        <span class="brand-mark" aria-hidden="true">⌬</span>
+        <span><span class="brand-name">ATOMIK</span><span class="brand-caption">Interactive chemistry lab</span></span>
+      </a>
+      <div class="top-right">
+        <span class="badge"><i class="badge-dot"></i> LABORATORIUM 3D</span>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div>
+        <div class="eyebrow">Jelajahi dunia yang tak terlihat</div>
+        <h1>Semesta kimia, <span>dalam 3D.</span></h1>
+        <p>Temukan susunan atom, bentuk molekul, dan seluruh unsur dalam satu ruang eksplorasi interaktif.</p>
+      </div>
+      <div class="credit-chip">Dirancang oleh <span>Leonel Dharma Wijaya</span></div>
+    </section>
+
+    <section class="explorer" aria-label="Eksplorasi atom dan molekul">
+      <div class="scene-card">
+        <div class="scene-toolbar">
+          <div class="mode-switch" role="tablist" aria-label="Mode visualisasi">
+            <button class="mode-button active" id="atomMode" role="tab" aria-selected="true">Atom</button>
+            <button class="mode-button" id="moleculeMode" role="tab" aria-selected="false">Molekul</button>
+          </div>
+          <div class="toolbar-actions">
+            <span class="scene-status" id="sceneStatus">MODEL ATOM</span>
+            <button class="toolbar-button" id="resetView" type="button" aria-label="Atur ulang tampilan">Atur ulang ↺</button>
+          </div>
+        </div>
+        <div class="viewport" id="viewport">
+          <canvas id="scene" aria-label="Visualisasi 3D atom atau molekul"></canvas>
+          <div class="scene-label" id="sceneLabel">ATOM · MODEL BOHR</div>
+          <div class="scene-help"><span>Seret untuk memutar</span><span>Scroll untuk zoom</span></div>
+        </div>
+        <div class="molecule-picker" id="moleculePicker" aria-label="Pilih molekul">
+          <span class="picker-label">PILIH MOLEKUL</span>
+          <button class="molecule-button active" data-molecule="water" type="button">H₂O</button>
+          <button class="molecule-button" data-molecule="co2" type="button">CO₂</button>
+          <button class="molecule-button" data-molecule="o2" type="button">O₂</button>
+        </div>
+      </div>
+
+      <aside class="info-card" aria-live="polite">
+        <div class="info-head"><span id="infoHeading">Informasi unsur</span><i class="info-dot"></i></div>
+        <div class="element-heading">
+          <div class="element-symbol" id="elementSymbol">O</div>
+          <div><div class="element-name" id="elementName">Oksigen</div><div class="element-latin" id="elementLatin">Oxygen</div><div class="atomic-number" id="atomicNumber">UNSUR · 008</div></div>
+        </div>
+        <div class="property-grid">
+          <div class="property"><div class="property-label">Nomor atom</div><div class="property-value" id="propertyNumber">8</div></div>
+          <div class="property"><div class="property-label">Massa atom relatif</div><div class="property-value" id="propertyMass">15.999</div></div>
+          <div class="property"><div class="property-label">Kategori</div><div class="property-value" id="propertyCategory">Nonlogam</div></div>
+          <div class="property"><div class="property-label">Elektron</div><div class="property-value" id="propertyElectrons">8</div></div>
+        </div>
+        <div class="use-block">
+          <div class="use-title">Kegunaan & fakta</div>
+          <p class="use-text" id="elementUse">Penting untuk respirasi; digunakan dalam terapi oksigen, pengelasan, dan pembuatan baja.</p>
+        </div>
+        <div class="atom-facts">
+          <div class="fact">PROTON<strong id="protonCount">8</strong></div>
+          <div class="fact">NEUTRON<strong id="neutronCount">8</strong></div>
+          <div class="fact">ELEKTRON<strong id="electronCount">8</strong></div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="periodic-card" aria-label="Tabel periodik unsur">
+      <div class="periodic-header">
+        <div><h2 class="periodic-title">Tabel periodik unsur</h2><div class="periodic-subtitle">Pilih unsur untuk melihat detail dan model atomnya · 118 unsur</div></div>
+        <div class="periodic-tools">
+          <div class="legend" aria-label="Kategori unsur">
+            <span><i style="--legend-color:#75e8ba"></i>Nonlogam</span><span><i style="--legend-color:#ffbf73"></i>Logam</span><span><i style="--legend-color:#b9a2ff"></i>Metaloid</span><span><i style="--legend-color:#74c9ff"></i>Gas mulia</span><span><i style="--legend-color:#ff83b7"></i>Halogen</span>
+          </div>
+          <label class="search-wrap"><input class="search" id="elementSearch" type="search" placeholder="Cari nama atau simbol..." aria-label="Cari unsur"></label>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <div class="periodic-grid" id="periodicGrid" role="group" aria-label="118 unsur kimia"></div>
+      </div>
+      <p class="table-note">Massa atom relatif ditampilkan untuk isotop paling stabil pada unsur tanpa isotop stabil (dalam tanda kurung).</p>
+    </section>
+
+    <footer><span>MODEL ATOM BERSIFAT EDUKATIF · BUKAN REPRESENTASI SKALA SEBENARNYA</span><span class="watermark">LEONEL DHARMA WIJAYA</span></footer>
+  </main>
+
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+    const rawElements = `
+1|H|Hidrogen|1.008
+2|He|Helium|4.0026
+3|Li|Litium|6.94
+4|Be|Berilium|9.0122
+5|B|Boron|10.81
+6|C|Karbon|12.011
+7|N|Nitrogen|14.007
+8|O|Oksigen|15.999
+9|F|Fluorin|18.998
+10|Ne|Neon|20.180
+11|Na|Natrium|22.990
+12|Mg|Magnesium|24.305
+13|Al|Aluminium|26.982
+14|Si|Silikon|28.085
+15|P|Fosfor|30.974
+16|S|Sulfur|32.06
+17|Cl|Klorin|35.45
+18|Ar|Argon|39.948
+19|K|Kalium|39.098
+20|Ca|Kalsium|40.078
+21|Sc|Skandium|44.956
+22|Ti|Titanium|47.867
+23|V|Vanadium|50.942
+24|Cr|Kromium|51.996
+25|Mn|Mangan|54.938
+26|Fe|Besi|55.845
+27|Co|Kobalt|58.933
+28|Ni|Nikel|58.693
+29|Cu|Tembaga|63.546
+30|Zn|Seng|65.38
+31|Ga|Galium|69.723
+32|Ge|Germanium|72.630
+33|As|Arsen|74.922
+34|Se|Selenium|78.971
+35|Br|Bromin|79.904
+36|Kr|Kripton|83.798
+37|Rb|Rubidium|85.468
+38|Sr|Stronsium|87.62
+39|Y|Itrium|88.906
+40|Zr|Zirkonium|91.224
+41|Nb|Niobium|92.906
+42|Mo|Molibdenum|95.95
+43|Tc|Teknesium|(98)
+44|Ru|Rutenium|101.07
+45|Rh|Rodium|102.91
+46|Pd|Paladium|106.42
+47|Ag|Perak|107.87
+48|Cd|Kadmium|112.41
+49|In|Indium|114.82
+50|Sn|Timah|118.71
+51|Sb|Antimon|121.76
+52|Te|Telurium|127.60
+53|I|Iodin|126.90
+54|Xe|Xenon|131.29
+55|Cs|Sesium|132.91
+56|Ba|Barium|137.33
+57|La|Lantanum|138.91
+58|Ce|Serium|140.12
+59|Pr|Praseodimium|140.91
+60|Nd|Neodimium|144.24
+61|Pm|Prometium|(145)
+62|Sm|Samarium|150.36
+63|Eu|Europium|151.96
+64|Gd|Gadolinium|157.25
+65|Tb|Terbium|158.93
+66|Dy|Disprosium|162.50
+67|Ho|Holmium|164.93
+68|Er|Erbium|167.26
+69|Tm|Tulium|168.93
+70|Yb|Iterbium|173.05
+71|Lu|Lutesium|174.97
+72|Hf|Hafnium|178.49
+73|Ta|Tantalum|180.95
+74|W|Wolfram|183.84
+75|Re|Renium|186.21
+76|Os|Osmium|190.23
+77|Ir|Iridium|192.22
+78|Pt|Platina|195.08
+79|Au|Emas|196.97
+80|Hg|Raksa|200.59
+81|Tl|Talium|204.38
+82|Pb|Timbal|207.2
+83|Bi|Bismut|208.98
+84|Po|Polonium|(209)
+85|At|Astatin|(210)
+86|Rn|Radon|(222)
+87|Fr|Fransium|(223)
+88|Ra|Radium|(226)
+89|Ac|Aktinium|(227)
+90|Th|Torium|232.04
+91|Pa|Protaktinium|231.04
+92|U|Uranium|238.03
+93|Np|Neptunium|(237)
+94|Pu|Plutonium|(244)
+95|Am|Amerisium|(243)
+96|Cm|Kurium|(247)
+97|Bk|Berkelium|(247)
+98|Cf|Kalifornium|(251)
+99|Es|Einsteinium|(252)
+100|Fm|Fermium|(257)
+101|Md|Mendelevium|(258)
+102|No|Nobelium|(259)
+103|Lr|Lawrensium|(266)
+104|Rf|Rutherfordium|(267)
+105|Db|Dubnium|(268)
+106|Sg|Seaborgium|(269)
+107|Bh|Bohrium|(270)
+108|Hs|Hassium|(277)
+109|Mt|Meitnerium|(278)
+110|Ds|Darmstadtium|(281)
+111|Rg|Roentgenium|(282)
+112|Cn|Kopernisium|(285)
+113|Nh|Nihonium|(286)
+114|Fl|Flerovium|(289)
+115|Mc|Moskovium|(290)
+116|Lv|Livermorium|(293)
+117|Ts|Tenesin|(294)
+118|Og|Oganeson|(294)`;
+
+    const colors = {
+      "Nonlogam": "#75e8ba", "Gas mulia": "#74c9ff", "Logam alkali": "#ffbf73",
+      "Logam alkali tanah": "#ffd98a", "Metaloid": "#b9a2ff", "Halogen": "#ff83b7",
+      "Logam transisi": "#f0a975", "Lantanida": "#e9a1d2", "Aktinida": "#f18c91",
+      "Logam pascatransisi": "#9cc9ae", "Logam": "#ffbf73"
+    };
+    const alkali = new Set([3, 11, 19, 37, 55, 87]);
+    const alkaline = new Set([4, 12, 20, 38, 56, 88]);
+    const metalloids = new Set([5, 14, 32, 33, 51, 52]);
+    const nonmetals = new Set([1, 6, 7, 8, 15, 16, 34]);
+    const halogens = new Set([9, 17, 35, 53, 85, 117]);
+    const noble = new Set([2, 10, 18, 36, 54, 86, 118]);
+    const postTransition = new Set([13, 31, 49, 50, 81, 82, 83, 84, 113, 114, 115, 116]);
+    const uses = {
+      1: "Bahan bakar roket dan sel bahan bakar; unsur paling melimpah di alam semesta.",
+      2: "Gas pengisi balon dan pendingin kriogenik karena sangat ringan dan inert.",
+      3: "Komponen baterai isi ulang, kaca khusus, dan paduan ringan.",
+      5: "Senyawanya digunakan pada kaca borosilikat, deterjen, dan bahan semikonduktor.",
+      6: "Dasar kimia kehidupan; grafit untuk pensil dan berlian untuk alat potong.",
+      7: "Pembuatan amonia dan pupuk; gas nitrogen juga menjadi atmosfer inert.",
+      8: "Penting untuk respirasi; digunakan dalam terapi oksigen, pengelasan, dan pembuatan baja.",
+      9: "Digunakan dalam pasta gigi dan polimer tahan kimia seperti Teflon.",
+      10: "Gas bercahaya untuk lampu reklame dan indikator tegangan tinggi.",
+      11: "Konduktor listrik dan panas pada kabel, peralatan masak, serta paduan.",
+      12: "Digunakan pada paduan ringan, antikorosi, dan nutrisi tumbuhan.",
+      13: "Bahan ringan untuk kaleng, pesawat, kabel, dan konstruksi.",
+      14: "Bahan utama chip komputer, panel surya, dan kaca.",
+      15: "Penting untuk pupuk dan biologis; juga digunakan dalam korek api.",
+      16: "Bahan untuk asam sulfat, vulkanisasi karet, dan produksi pupuk.",
+      17: "Disinfeksi air dan bahan baku berbagai produk kimia.",
+      18: "Gas pelindung inert untuk pengelasan dan pengisi lampu.",
+      19: "Digunakan dalam pupuk dan pembuatan sabun; ion penting bagi saraf.",
+      20: "Penting bagi tulang; digunakan pada semen, kapur, dan pembuatan baja.",
+      26: "Bahan utama baja untuk bangunan, kendaraan, mesin, dan peralatan.",
+      28: "Paduan tahan korosi dan katalis; dahulu umum pada pelapisan logam.",
+      29: "Kabel listrik, pipa, komponen elektronik, dan paduan kuningan.",
+      47: "Perhiasan, kontak listrik, cermin, dan aplikasi antimikroba.",
+      50: "Pelapis kaleng makanan dan bahan solder.",
+      53: "Antiseptik dan nutrisi penting untuk fungsi kelenjar tiroid.",
+      74: "Filamen lampu dan paduan yang tahan suhu sangat tinggi.",
+      78: "Katalis, perhiasan, dan komponen elektronik yang tahan korosi.",
+      79: "Perhiasan, konektor elektronik, dan pelapisan tahan korosi.",
+      80: "Digunakan pada instrumen ilmiah dan lampu khusus; bersifat toksik.",
+      82: "Pelindung radiasi, aki timbal-asam, dan pemberat industri.",
+      92: "Bahan bakar pada sejumlah reaktor nuklir dan penanggalan geologis.",
+      94: "Bahan bakar reaktor dan sumber panas untuk wahana antariksa."
+    };
+    const elements = rawElements.trim().split("\n").map(line => {
+      const [number, symbol, name, mass] = line.split("|");
+      const z = Number(number);
+      let category = "Logam transisi";
+      if (alkali.has(z)) category = "Logam alkali";
+      else if (alkaline.has(z)) category = "Logam alkali tanah";
+      else if (metalloids.has(z)) category = "Metaloid";
+      else if (nonmetals.has(z)) category = "Nonlogam";
+      else if (halogens.has(z)) category = "Halogen";
+      else if (noble.has(z)) category = "Gas mulia";
+      else if (z >= 57 && z <= 71) category = "Lantanida";
+      else if (z >= 89 && z <= 103) category = "Aktinida";
+      else if (postTransition.has(z)) category = "Logam pascatransisi";
+      return { z, symbol, name, mass, category, color: colors[category] || colors.Logam };
+    });
+
+    const grid = document.getElementById("periodicGrid");
+    const position = z => {
+      if (z === 1) return [1, 1];
+      if (z === 2) return [1, 18];
+      if (z >= 3 && z <= 4) return [2, z - 2];
+      if (z >= 5 && z <= 10) return [2, z + 8];
+      if (z >= 11 && z <= 12) return [3, z - 10];
+      if (z >= 13 && z <= 18) return [3, z + 2];
+      if (z >= 19 && z <= 36) return [4, z - 18];
+      if (z >= 37 && z <= 54) return [5, z - 36];
+      if (z >= 55 && z <= 56) return [6, z - 54];
+      if (z >= 57 && z <= 71) return [9, z - 54];
+      if (z >= 72 && z <= 86) return [6, z - 68];
+      if (z >= 87 && z <= 88) return [7, z - 86];
+      if (z >= 89 && z <= 103) return [10, z - 86];
+      return [7, z - 100];
+    };
+    const elementButtons = new Map();
+    for (const element of elements) {
+      const [row, column] = position(element.z);
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "element-tile";
+      button.style.gridRow = String(row);
+      button.style.gridColumn = String(column);
+      button.style.setProperty("--tile-color", element.color);
+      button.setAttribute("aria-label", `${element.name}, ${element.symbol}, nomor atom ${element.z}`);
+      button.innerHTML = `<span class="tile-number">${element.z}</span><span class="tile-symbol">${element.symbol}</span><span class="tile-name">${element.name}</span>`;
+      button.addEventListener("click", () => selectElement(element));
+      grid.append(button);
+      elementButtons.set(element.z, button);
+    }
+    const seriesLabel = document.createElement("div");
+    seriesLabel.className = "series-label";
+    seriesLabel.style.gridRow = "9";
+    seriesLabel.textContent = "Lantanida";
+    grid.append(seriesLabel);
+    const actinideLabel = document.createElement("div");
+    actinideLabel.className = "series-label";
+    actinideLabel.style.gridRow = "10";
+    actinideLabel.textContent = "Aktinida";
+    grid.append(actinideLabel);
+
+    const byId = id => document.getElementById(id);
+    let selectedElement = elements[7];
+    let updateSceneForElement = () => {};
+    function selectElement(element) {
+      selectedElement = element;
+      document.querySelectorAll(".element-tile.selected").forEach(tile => tile.classList.remove("selected"));
+      elementButtons.get(element.z).classList.add("selected");
+      byId("infoHeading").textContent = "Informasi unsur";
+      byId("elementSymbol").textContent = element.symbol;
+      byId("elementName").textContent = element.name;
+      byId("elementLatin").textContent = `Nama internasional · ${element.name}`;
+      byId("atomicNumber").textContent = `UNSUR · ${String(element.z).padStart(3, "0")}`;
+      byId("propertyNumber").textContent = element.z;
+      byId("propertyMass").textContent = element.mass;
+      byId("propertyCategory").textContent = element.category;
+      byId("propertyElectrons").textContent = element.z;
+      byId("elementUse").textContent = uses[element.z] || `${element.name} termasuk ${element.category.toLowerCase()}. Unsur ini dipelajari dalam riset material, kimia, dan teknologi; beberapa isotopnya memiliki kegunaan khusus dalam industri atau penelitian.`;
+      byId("protonCount").textContent = element.z;
+      byId("neutronCount").textContent = Math.max(0, Math.round(Number(element.mass.replace(/[()]/g, "")) - element.z));
+      byId("electronCount").textContent = element.z;
+      if (mode === "atom") updateSceneForElement(element);
+    }
+
+    let mode = "atom";
+    let molecule = "water";
+    let renderer;
+    let controls;
+    let scene;
+    let camera;
+    let activeModel = new THREE.Group();
+    let animationFrame;
+    const viewport = byId("viewport");
+    const canvas = byId("scene");
+    const atomColors = { H: "#dce9f5", O: "#fa6472", C: "#596474" };
+    const atomRadii = { H: .3, O: .56, C: .52 };
+
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setClearColor(0x000000, 0);
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.2;
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(36, 1, .1, 100);
+      camera.position.set(0, 1.1, 7.5);
+      scene.add(new THREE.AmbientLight(0xb9d7e8, 1.4));
+      const keyLight = new THREE.PointLight(0x9ffff0, 52, 16);
+      keyLight.position.set(-3.2, 3.8, 4.2);
+      scene.add(keyLight);
+      const fillLight = new THREE.PointLight(0x7797ff, 30, 18);
+      fillLight.position.set(3.2, -2, 3);
+      scene.add(fillLight);
+      controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = .06;
+      controls.minDistance = 3.2;
+      controls.maxDistance = 12;
+      controls.autoRotate = true;
+      controls.autoRotateSpeed = .5;
+      scene.add(activeModel);
+
+      function resizeScene() {
+        const width = Math.max(1, viewport.clientWidth);
+        const height = Math.max(1, viewport.clientHeight);
+        renderer.setSize(width, height, false);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      }
+      new ResizeObserver(resizeScene).observe(viewport);
+      resizeScene();
+
+      function disposeModel() {
+        scene.remove(activeModel);
+        activeModel.traverse(object => {
+          if (object.geometry) object.geometry.dispose();
+          if (object.material) {
+            const materials = Array.isArray(object.material) ? object.material : [object.material];
+            materials.forEach(material => material.dispose());
+          }
+        });
+        activeModel = new THREE.Group();
+        scene.add(activeModel);
+      }
+      function makeSphere(radius, color, emissive = color, glow = .08) {
+        const material = new THREE.MeshStandardMaterial({ color, roughness: .32, metalness: .06, emissive, emissiveIntensity: glow });
+        const mesh = new THREE.Mesh(new THREE.SphereGeometry(radius, 32, 24), material);
+        return mesh;
+      }
+      function makeBond(start, end, radius = .075) {
+        const from = new THREE.Vector3(...start);
+        const to = new THREE.Vector3(...end);
+        const direction = new THREE.Vector3().subVectors(to, from);
+        const cylinder = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, direction.length(), 20), new THREE.MeshStandardMaterial({ color: "#b8cbd8", roughness: .34, metalness: .3 }));
+        cylinder.position.copy(from).add(to).multiplyScalar(.5);
+        cylinder.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+        activeModel.add(cylinder);
+      }
+      function renderAtom(element) {
+        disposeModel();
+        const nucleus = new THREE.Group();
+        const nucleonCount = Math.min(element.z, 42);
+        const neutrons = Math.max(0, Math.round(Number(element.mass.replace(/[()]/g, "")) - element.z));
+        const shownNeutrons = Math.min(neutrons, 42 - Math.min(element.z, 42));
+        for (let i = 0; i < nucleonCount + shownNeutrons; i++) {
+          const golden = Math.PI * (3 - Math.sqrt(5));
+          const y = 1 - (i / Math.max(1, nucleonCount + shownNeutrons - 1)) * 2;
+          const radius = Math.sqrt(Math.max(0, 1 - y * y)) * .39;
+          const angle = golden * i;
+          const particle = makeSphere(.115, i < nucleonCount ? "#ff725e" : "#79a9ff", i < nucleonCount ? "#ff624d" : "#5c8cff", .32);
+          particle.position.set(Math.cos(angle) * radius, y * .39, Math.sin(angle) * radius);
+          nucleus.add(particle);
+        }
+        activeModel.add(nucleus);
+        const shellCapacities = [2, 8, 18, 32, 32, 18, 8];
+        let remaining = element.z;
+        shellCapacities.forEach((capacity, shellIndex) => {
+          if (!remaining) return;
+          const count = Math.min(capacity, remaining);
+          remaining -= count;
+          const radius = 1.05 + shellIndex * .43;
+          const orbit = new THREE.Mesh(
+            new THREE.TorusGeometry(radius, .006, 5, 128),
+            new THREE.MeshBasicMaterial({ color: shellIndex % 2 ? "#527e95" : "#70d9bd", transparent: true, opacity: .28 })
+          );
+          orbit.rotation.x = Math.PI * .5 + shellIndex * .17;
+          orbit.rotation.y = shellIndex * .48;
+          activeModel.add(orbit);
+          const electronGroup = new THREE.Group();
+          electronGroup.rotation.x = Math.PI * .5 + shellIndex * .17;
+          electronGroup.rotation.y = shellIndex * .48;
+          electronGroup.userData.speed = (shellIndex % 2 ? -1 : 1) * (.0025 + shellIndex * .0003);
+          for (let electronIndex = 0; electronIndex < count; electronIndex++) {
+            const angle = (Math.PI * 2 * electronIndex) / count + (shellIndex % 2) * .17;
+            const electron = makeSphere(.065, "#a9f9e3", "#5affd0", .85);
+            electron.position.set(Math.cos(angle) * radius, Math.sin(angle) * radius, 0);
+            electronGroup.add(electron);
+          }
+          activeModel.add(electronGroup);
+        });
+        activeModel.userData.atom = true;
+        activeModel.userData.nucleus = nucleus;
+        activeModel.userData.electronGroups = activeModel.children.filter(child => child.userData.speed);
+        camera.position.set(0, 1.1, 7.5);
+        controls.target.set(0, 0, 0);
+        controls.update();
+        byId("sceneStatus").textContent = "MODEL ATOM";
+        byId("sceneLabel").textContent = `ATOM ${element.symbol.toUpperCase()} · MODEL BOHR`;
+      }
+      updateSceneForElement = renderAtom;
+      function renderMolecule(which) {
+        disposeModel();
+        const molecules = {
+          water: { label: "H₂O", atoms: [["O", [0, 0, 0]], ["H", [-.88, .67, 0]], ["H", [.88, .67, 0]]], bonds: [[0, 1], [0, 2]] },
+          co2: { label: "CO₂", atoms: [["C", [0, 0, 0]], ["O", [-1.12, 0, 0]], ["O", [1.12, 0, 0]]], bonds: [[0, 1], [0, 1], [0, 2], [0, 2]] },
+          o2: { label: "O₂", atoms: [["O", [-.62, 0, 0]], ["O", [.62, 0, 0]]], bonds: [[0, 1], [0, 1]] }
+        };
+        const model = molecules[which];
+        for (const [left, right] of model.bonds) makeBond(model.atoms[left][1], model.atoms[right][1], .065);
+        model.atoms.forEach(([symbol, coords]) => {
+          const atom = makeSphere(atomRadii[symbol], atomColors[symbol], atomColors[symbol], .16);
+          atom.position.set(...coords);
+          activeModel.add(atom);
+        });
+        activeModel.userData.atom = false;
+        camera.position.set(0, 1.1, 6.7);
+        controls.target.set(0, 0, 0);
+        controls.update();
+        byId("sceneStatus").textContent = "MODEL MOLEKUL";
+        byId("sceneLabel").textContent = `MOLEKUL ${model.label} · MODEL BOLA & BATANG`;
+        byId("infoHeading").textContent = `Molekul ${model.label}`;
+      }
+      function animate() {
+        animationFrame = requestAnimationFrame(animate);
+        if (activeModel.userData.atom) {
+          activeModel.userData.nucleus.rotation.y += .002;
+          activeModel.userData.electronGroups.forEach(group => { group.rotation.z += group.userData.speed; });
+        }
+        controls.update();
+        renderer.render(scene, camera);
+      }
+      animate();
+      renderAtom(selectedElement);
+
+      byId("resetView").addEventListener("click", () => {
+        if (mode === "atom") renderAtom(selectedElement);
+        else renderMolecule(molecule);
+      });
+      byId("atomMode").addEventListener("click", () => setMode("atom"));
+      byId("moleculeMode").addEventListener("click", () => setMode("molecule"));
+      document.querySelectorAll(".molecule-button").forEach(button => button.addEventListener("click", () => {
+        molecule = button.dataset.molecule;
+        document.querySelectorAll(".molecule-button").forEach(item => item.classList.toggle("active", item === button));
+        if (mode === "molecule") renderMolecule(molecule);
+      }));
+      function setMode(nextMode) {
+        mode = nextMode;
+        const atomActive = mode === "atom";
+        byId("atomMode").classList.toggle("active", atomActive);
+        byId("moleculeMode").classList.toggle("active", !atomActive);
+        byId("atomMode").setAttribute("aria-selected", String(atomActive));
+        byId("moleculeMode").setAttribute("aria-selected", String(!atomActive));
+        byId("moleculePicker").classList.toggle("visible", !atomActive);
+        if (atomActive) {
+          byId("infoHeading").textContent = "Informasi unsur";
+          selectElement(selectedElement);
+        } else renderMolecule(molecule);
+      }
+      window.addEventListener("beforeunload", () => cancelAnimationFrame(animationFrame), { once: true });
+    } catch (error) {
+      console.error("Visualisasi Three.js tidak dapat dimulai:", error);
+      byId("sceneStatus").textContent = "3D TIDAK TERSEDIA";
+      byId("sceneStatus").style.color = "#ff9d92";
+      byId("sceneLabel").textContent = "Aktifkan WebGL dan koneksi internet untuk visualisasi 3D";
+    }
+
+    byId("elementSearch").addEventListener("input", event => {
+      const query = event.target.value.trim().toLocaleLowerCase("id");
+      elements.forEach(element => {
+        const matches = !query || element.name.toLocaleLowerCase("id").includes(query) || element.symbol.toLocaleLowerCase("id").includes(query) || String(element.z) === query;
+        elementButtons.get(element.z).classList.toggle("filtered", !matches);
+      });
+    });
+    selectElement(selectedElement);
+  </script>
+</body>
+</html>
